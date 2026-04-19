@@ -895,14 +895,18 @@ the definition as it's defined in `swagg-definitions'."
                 (with-temp-buffer
                   (insert-file-contents definition)
                   (swagg--definition-parse-buffer definition-type))
-              (let (result)
+              (let (result error)
                 (request definition
                   :sync t
                   :parser (apply-partially #'swagg--definition-parse-buffer definition-type)
                   :complete (cl-function
-                             (lambda (&key _status data &allow-other-keys)
-                               ;; TODO: Handle status
+                             (lambda (&key error-thrown data &allow-other-keys)
+                               (setq error error-thrown)
                                (setq result data))))
+                (when error
+                  (error "Error while processing definition of '%s': %s"
+                         (plist-get selected :name)
+                         error))
                 result)))))
     `(,@selected :swagger ,swagger)))
 
